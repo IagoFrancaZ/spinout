@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Spinout — Sorteio de jogos em tempo real para game nights">
+  <meta name="theme-color" content="#7c3aed">
+  <title>Spinout — Game Night Roulette</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@400;600;700&display=swap">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+  <!-- JOIN SCREEN -->
+  <div id="joinScreen" class="screen">
+    <div class="join-container">
+      <h1 class="logo">SPINOUT</h1>
+      <p class="subtitle">Game Night Roulette</p>
+      <div class="join-form">
+        <input type="text" id="inputName" placeholder="Seu nome" maxlength="30" autocomplete="off">
+        <input type="text" id="inputCode" placeholder="Código da sala" maxlength="20" autocomplete="off">
+        <button class="btn btn-primary btn-lg" id="btnJoin">Entrar na Sala</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN APP -->
+  <div id="appScreen" class="screen hidden">
+    <header class="top-bar">
+      <div class="top-bar-left">
+        <h1 class="top-logo">SPINOUT</h1>
+        <span class="room-badge" id="roomBadge"></span>
+      </div>
+      <div class="top-bar-right">
+        <span class="admin-badge" id="adminBadge"></span>
+        <span class="user-count" id="userCount" title="Jogadores online">0 online</span>
+        <button class="btn btn-ghost btn-sm" id="btnLeave">Sair</button>
+      </div>
+    </header>
+
+    <nav class="tabs" role="tablist">
+      <button class="tab-btn active" data-tab="sorteio" role="tab">Sorteio</button>
+      <button class="tab-btn" data-tab="jogos" role="tab">Jogos</button>
+      <button class="tab-btn" data-tab="config" role="tab">Config</button>
+      <button class="tab-btn" data-tab="historico" role="tab">Log</button>
+      <button class="tab-btn" data-tab="share" role="tab">Compartilhar</button>
+    </nav>
+
+    <main class="container">
+
+      <!-- TAB: SORTEIO -->
+      <section class="tab-panel active" id="tab-sorteio" role="tabpanel">
+
+        <div class="current-game-bar hidden" id="currentGameBar">
+          <div class="cg-info">
+            <span class="cg-emoji" id="cgEmoji"></span>
+            <div>
+              <div class="cg-name" id="cgName"></div>
+              <div class="cg-player" id="cgPlayer"></div>
+            </div>
+          </div>
+          <div class="round-badge">Rodada <span id="roundNum">1</span></div>
+        </div>
+
+        <div class="card roulette-card">
+          <div class="roulette-area">
+            <div class="roulette-wrapper" id="rouletteWrapper">
+              <div class="roulette-pointer">
+                <svg width="24" height="28" viewBox="0 0 24 28"><path d="M12 28L0 0h24L12 28z" fill="#a855f7"/></svg>
+              </div>
+              <div class="roulette-canvas-container">
+                <canvas id="rouletteCanvas" width="640" height="640"></canvas>
+                <div class="roulette-center" id="rouletteCenter">?</div>
+              </div>
+            </div>
+
+            <div id="resultArea" class="hidden"></div>
+
+            <div class="spin-actions">
+              <button class="btn btn-primary btn-lg admin-only" id="btnSpin">Girar Roleta</button>
+              <button class="btn btn-ghost hidden admin-only" id="btnRespin">Novo Sorteio</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- TIMER -->
+        <div class="card hidden" id="timerCard">
+          <div class="timer-section">
+            <div class="timer-label" id="timerLabel">TEMPO MÍNIMO</div>
+            <div class="timer-display" id="timerDisplay">40:00</div>
+            <div class="timer-btns">
+              <button class="btn btn-success admin-only" id="btnTimerStart">Iniciar Timer</button>
+              <button class="btn btn-ghost hidden admin-only" id="btnTimerPause">Pausar</button>
+              <button class="btn btn-danger hidden admin-only" id="btnTimerReset">Resetar</button>
+            </div>
+          </div>
+
+          <!-- VOTE -->
+          <div class="vote-section hidden" id="voteSection">
+            <h3 class="vote-title">Votação — Continuar ou Trocar?</h3>
+            <div class="vote-bar-container">
+              <div class="vote-bar-bg">
+                <div class="vote-bar-continue" id="voteContinueBar">Continuar</div>
+                <div class="vote-bar-switch" id="voteSwitchBar">Trocar</div>
+              </div>
+              <div class="vote-counts">
+                <span>Continuar: <strong id="voteContinueCount">0</strong></span>
+                <span>Trocar: <strong id="voteSwitchCount">0</strong></span>
+              </div>
+            </div>
+            <div class="vote-actions">
+              <button class="btn btn-success" id="btnVoteContinue">Continuar</button>
+              <button class="btn btn-danger" id="btnVoteSwitch">Trocar</button>
+            </div>
+            <p class="vote-result" id="voteResult"></p>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB: JOGOS -->
+      <section class="tab-panel" id="tab-jogos" role="tabpanel">
+        <div class="card">
+          <h2 class="card-title">Adicionar Jogo</h2>
+          <form class="form-row" id="addGameForm">
+            <input type="text" id="inputGameName" placeholder="Nome do jogo" required>
+            <input type="text" id="inputPlayerName" placeholder="Escolha de quem?">
+            <input type="text" id="inputGameEmoji" placeholder="Ícone" maxlength="4" class="input-sm">
+            <button type="submit" class="btn btn-primary">Adicionar</button>
+          </form>
+        </div>
+        <div class="card">
+          <h2 class="card-title">Jogos na Roleta (<span id="gameCount">0</span>)</h2>
+          <div class="game-list" id="gameList"></div>
+          <div class="card-actions">
+            <button class="btn btn-ghost admin-only" id="btnResetPlayed">Resetar Jogados</button>
+            <button class="btn btn-danger admin-only" id="btnClearGames">Limpar Tudo</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB: CONFIG -->
+      <section class="tab-panel" id="tab-config" role="tabpanel">
+        <div class="card">
+          <h2 class="card-title">Configurações</h2>
+          <div class="config-group">
+            <label for="cfgMinTime">Tempo Mínimo (min)</label>
+            <input type="number" id="cfgMinTime" value="40" min="1" max="300">
+          </div>
+          <div class="config-group">
+            <label for="cfgMaxTime">Tempo Máximo (min)</label>
+            <input type="number" id="cfgMaxTime" value="160" min="1" max="600">
+          </div>
+          <div class="config-group">
+            <label for="cfgVoteInterval">Intervalo de Votação (min)</label>
+            <input type="number" id="cfgVoteInterval" value="20" min="1" max="120">
+          </div>
+          <div class="config-group">
+            <label for="cfgSessionName">Nome da Sessão</label>
+            <input type="text" id="cfgSessionName" value="Noite dos MLKs" maxlength="50">
+          </div>
+          <button class="btn btn-primary admin-only" id="btnSaveConfig">Salvar Configurações</button>
+        </div>
+        <div class="card">
+          <h2 class="card-title">Código da Sala</h2>
+          <div class="entry-code" id="entryCodeDisplay"></div>
+          <p class="text-muted text-center">Compartilhe este código com os participantes</p>
+        </div>
+      </section>
+
+      <!-- TAB: HISTORICO -->
+      <section class="tab-panel" id="tab-historico" role="tabpanel">
+        <div class="card">
+          <h2 class="card-title">Histórico de Rodadas</h2>
+          <div class="log-list" id="logList">
+            <p class="text-muted">Nenhuma rodada ainda.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB: SHARE -->
+      <section class="tab-panel" id="tab-share" role="tabpanel">
+        <div class="card">
+          <h2 class="card-title">Compartilhar Sessão</h2>
+          <p class="text-muted mb">Envie o link para os participantes entrarem na mesma sala em tempo real.</p>
+          <div class="share-actions">
+            <button class="btn btn-primary" id="btnCopyLink">Copiar Link</button>
+            <button class="btn btn-ghost" id="btnExportText">Exportar Texto</button>
+          </div>
+          <div class="share-box hidden" id="shareBox"></div>
+        </div>
+        <div class="card">
+          <h2 class="card-title">Jogadores Online</h2>
+          <div id="onlineList" class="online-list"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <canvas id="confettiCanvas"></canvas>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>

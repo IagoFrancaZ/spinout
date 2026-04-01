@@ -1,0 +1,17 @@
+{
+  "name": "spinout",
+  "version": "1.0.0",
+  "description": "Spinout — Sorteio de jogos em tempo real",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "socket.io": "^4.7.5"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
