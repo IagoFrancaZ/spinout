@@ -51,13 +51,13 @@ function loadRoomFromDisk(code) {
 
 // ─── Default data ────────────────────────────────────────────
 const DEFAULT_GAMES = [
-  { id: 1, name: 'Half Sword',         player: 'Iago',     emoji: 'HS',  played: false },
-  { id: 2, name: 'Forsaken Frontiers', player: 'Derik',    emoji: 'FF',  played: false },
-  { id: 3, name: 'TEKKEN 8',           player: 'Jordanny', emoji: 'T8',  played: false },
-  { id: 4, name: 'The Forest',         player: 'Xandy',    emoji: 'TF',  played: false },
-  { id: 5, name: 'CS:GO',              player: 'Julios',   emoji: 'CS',  played: false },
-  { id: 6, name: 'Make Way',           player: 'Cauã',     emoji: 'MW',  played: false },
-  { id: 7, name: 'Super Golf',         player: 'Diogo',    emoji: 'SG',  played: false },
+  { id: 1, name: 'Half Sword',         player: 'Iago',     emoji: '⚔️',  image: '', played: false },
+  { id: 2, name: 'Forsaken Frontiers', player: 'Derik',    emoji: '🌌',  image: '', played: false },
+  { id: 3, name: 'TEKKEN 8',           player: 'Jordanny', emoji: '🥊',  image: '', played: false },
+  { id: 4, name: 'The Forest',         player: 'Xandy',    emoji: '🌲',  image: '', played: false },
+  { id: 5, name: 'CS:GO',              player: 'Julios',   emoji: '🔫',  image: '', played: false },
+  { id: 6, name: 'Make Way',           player: 'Cauã',     emoji: '🏁',  image: '', played: false },
+  { id: 7, name: 'Super Golf',         player: 'Diogo',    emoji: '⛳',  image: '', played: false },
 ];
 
 const DEFAULT_CONFIG = {
@@ -343,17 +343,24 @@ io.on('connection', (socket) => {
   });
 
   // ── Games ──
-  socket.on('game:add', ({ name, player, emoji }) => {
+  socket.on('game:add', ({ name, player, emoji, image }) => {
     if (!currentRoom) return;
     if (!name || typeof name !== 'string') return;
     const id = currentRoom.games.length > 0
       ? Math.max(...currentRoom.games.map(g => g.id)) + 1
       : 1;
+    // Validate image URL if provided
+    let safeImage = '';
+    if (image && typeof image === 'string') {
+      const trimmed = image.trim().slice(0, 500);
+      if (/^https?:\/\//i.test(trimmed)) safeImage = trimmed;
+    }
     currentRoom.games.push({
       id,
       name: name.trim().slice(0, 50),
       player: (player || '?').trim().slice(0, 30),
-      emoji: (emoji || '--').trim().slice(0, 4),
+      emoji: (emoji || '🎮').trim().slice(0, 4),
+      image: safeImage,
       played: false,
     });
     saveRoomToDisk(currentRoom);

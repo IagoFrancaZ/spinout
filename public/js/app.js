@@ -537,10 +537,14 @@
 
     var w = data.winner;
     show(resultArea);
+    var resultImg = w.image
+      ? '<img class="result-img" src="' + esc(w.image) + '" alt="">'
+      : '<div class="result-emoji">' + esc(w.emoji) + '</div>';
     resultArea.innerHTML =
       '<div class="result-display">' +
+        resultImg +
         '<div class="rn">' + esc(w.name) + '</div>' +
-        '<div class="rp">Escolha de ' + esc(w.player) + '</div>' +
+        '<div class="rp">🎯 Escolha de ' + esc(w.player) + '</div>' +
       '</div>';
 
     rouletteCenter.textContent = '!';
@@ -626,9 +630,10 @@
     e.preventDefault();
     var name = $('inputGameName').value.trim();
     var player = $('inputPlayerName').value.trim();
-    var emoji = $('inputGameEmoji').value.trim() || '--';
+    var emoji = $('inputGameEmoji').value.trim() || '🎮';
+    var image = $('inputGameImage').value.trim();
     if (!name) return;
-    socket.emit('game:add', { name: name, player: player, emoji: emoji });
+    socket.emit('game:add', { name: name, player: player, emoji: emoji, image: image });
     addGameForm.reset();
   });
 
@@ -639,19 +644,22 @@
 
   function renderGameList(games) {
     if (!games || games.length === 0) {
-      gameList.innerHTML = '<p class="text-muted">Nenhum jogo cadastrado.</p>';
+      gameList.innerHTML = '<p class="text-muted">🎮 Nenhum jogo cadastrado.</p>';
       return;
     }
     gameList.innerHTML = games.map(function (g) {
+      var thumb = g.image
+        ? '<img class="game-thumb" src="' + esc(g.image) + '" alt="" loading="lazy">'
+        : '<span class="emoji">' + esc(g.emoji) + '</span>';
       return (
         '<div class="game-item' + (g.played ? ' played' : '') + '">' +
-          '<span class="emoji">' + esc(g.emoji) + '</span>' +
+          thumb +
           '<div class="info">' +
             '<div class="name">' + esc(g.name) + '</div>' +
             '<div class="player">' + esc(g.player) + '</div>' +
           '</div>' +
           '<button class="remove-btn admin-only" data-id="' + g.id + '" title="Remover"' +
-            (!isAdmin ? ' disabled' : '') + '>x</button>' +
+            (!isAdmin ? ' disabled' : '') + '>✖</button>' +
         '</div>'
       );
     }).join('');
@@ -690,30 +698,30 @@
     if (s.currentGame) {
       show(currentGameBar);
       cgEmoji.textContent = s.currentGame.emoji;
-      cgName.textContent = s.currentGame.name;
-      cgPlayer.textContent = 'Escolha de ' + s.currentGame.player;
+      cgName.textContent = '🎮 ' + s.currentGame.name;
+      cgPlayer.textContent = '🎯 Escolha de ' + s.currentGame.player;
       roundNum.textContent = s.round;
     } else { hide(currentGameBar); }
   }
 
   function renderLog(log) {
     if (!log || log.length === 0) {
-      logList.innerHTML = '<p class="text-muted">Nenhuma rodada ainda.</p>';
+      logList.innerHTML = '<p class="text-muted">📋 Nenhuma rodada ainda.</p>';
       return;
     }
     logList.innerHTML = log.slice().reverse().map(function (l) {
-      return '<div class="log-item"><strong>' + esc(l.game) + '</strong> -- ' + esc(l.player) +
-        '<br><span class="log-time">Rodada ' + l.round + ' | ' + l.time + '</span></div>';
+      return '<div class="log-item"><strong>' + esc(l.emoji) + ' ' + esc(l.game) + '</strong> — ' + esc(l.player) +
+        '<br><span class="log-time">🎲 Rodada ' + l.round + ' • 🕒 ' + l.time + '</span></div>';
     }).join('');
   }
 
   function renderOnline(users) {
     if (!users || users.length === 0) {
-      onlineList.innerHTML = '<p class="text-muted">Ninguem online.</p>';
+      onlineList.innerHTML = '<p class="text-muted">👤 Ninguem online.</p>';
       return;
     }
     onlineList.innerHTML = users.map(function (u) {
-      var badge = u.isAdmin ? '<span class="host-tag">HOST</span>' : '';
+      var badge = u.isAdmin ? '<span class="host-tag">👑 HOST</span>' : '';
       return '<span class="online-user"><span class="online-dot"></span>' + esc(u.name) + badge + '</span>';
     }).join('');
   }

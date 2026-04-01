@@ -18,6 +18,11 @@
     <div class="join-container">
       <h1 class="logo">SPINOUT</h1>
       <p class="subtitle">Game Night Roulette</p>
+      <div class="join-info">
+        <p>🎮 Digite qualquer código para criar ou entrar numa sala</p>
+        <p>🔗 Cada código = uma sala independente com seus próprios jogos, timer e histórico</p>
+        <p>👥 Mande o mesmo código pros amigos e todo mundo cai na mesma sala em tempo real</p>
+      </div>
       <div class="join-form">
         <input type="text" id="inputName" placeholder="Seu nome" maxlength="30" autocomplete="off">
         <input type="text" id="inputCode" placeholder="Código da sala" maxlength="20" autocomplete="off">
@@ -41,11 +46,11 @@
     </header>
 
     <nav class="tabs" role="tablist">
-      <button class="tab-btn active" data-tab="sorteio" role="tab">Sorteio</button>
-      <button class="tab-btn" data-tab="jogos" role="tab">Jogos</button>
-      <button class="tab-btn" data-tab="config" role="tab">Config</button>
-      <button class="tab-btn" data-tab="historico" role="tab">Log</button>
-      <button class="tab-btn" data-tab="share" role="tab">Compartilhar</button>
+      <button class="tab-btn active" data-tab="sorteio" role="tab">🎰 Sorteio</button>
+      <button class="tab-btn" data-tab="jogos" role="tab">🎮 Jogos</button>
+      <button class="tab-btn" data-tab="config" role="tab">⚙️ Config</button>
+      <button class="tab-btn" data-tab="historico" role="tab">📋 Log</button>
+      <button class="tab-btn" data-tab="share" role="tab">🔗 Compartilhar</button>
     </nav>
 
     <main class="container">
@@ -79,8 +84,8 @@
             <div id="resultArea" class="hidden"></div>
 
             <div class="spin-actions">
-              <button class="btn btn-primary btn-lg admin-only" id="btnSpin">Girar Roleta</button>
-              <button class="btn btn-ghost hidden admin-only" id="btnRespin">Novo Sorteio</button>
+              <button class="btn btn-primary btn-lg admin-only" id="btnSpin">🎰 Girar Roleta</button>
+              <button class="btn btn-ghost hidden admin-only" id="btnRespin">🔄 Novo Sorteio</button>
             </div>
           </div>
         </div>
@@ -122,20 +127,25 @@
       <!-- TAB: JOGOS -->
       <section class="tab-panel" id="tab-jogos" role="tabpanel">
         <div class="card">
-          <h2 class="card-title">Adicionar Jogo</h2>
-          <form class="form-row" id="addGameForm">
-            <input type="text" id="inputGameName" placeholder="Nome do jogo" required>
-            <input type="text" id="inputPlayerName" placeholder="Escolha de quem?">
-            <input type="text" id="inputGameEmoji" placeholder="Ícone" maxlength="4" class="input-sm">
-            <button type="submit" class="btn btn-primary">Adicionar</button>
+          <h2 class="card-title">➕ Adicionar Jogo</h2>
+          <form class="add-game-form" id="addGameForm">
+            <div class="form-row">
+              <input type="text" id="inputGameName" placeholder="Nome do jogo" required>
+              <input type="text" id="inputPlayerName" placeholder="Escolha de quem?">
+              <input type="text" id="inputGameEmoji" placeholder="Emoji" maxlength="4" class="input-sm">
+            </div>
+            <div class="form-row">
+              <input type="url" id="inputGameImage" placeholder="URL da imagem do jogo (opcional)">
+            </div>
+            <button type="submit" class="btn btn-primary">➕ Adicionar</button>
           </form>
         </div>
         <div class="card">
-          <h2 class="card-title">Jogos na Roleta (<span id="gameCount">0</span>)</h2>
+          <h2 class="card-title">🎮 Jogos na Roleta (<span id="gameCount">0</span>)</h2>
           <div class="game-list" id="gameList"></div>
           <div class="card-actions">
-            <button class="btn btn-ghost admin-only" id="btnResetPlayed">Resetar Jogados</button>
-            <button class="btn btn-danger admin-only" id="btnClearGames">Limpar Tudo</button>
+            <button class="btn btn-ghost admin-only" id="btnResetPlayed">🔄 Resetar Jogados</button>
+            <button class="btn btn-danger admin-only" id="btnClearGames">🗑️ Limpar Tudo</button>
           </div>
         </div>
       </section>
@@ -143,7 +153,7 @@
       <!-- TAB: CONFIG -->
       <section class="tab-panel" id="tab-config" role="tabpanel">
         <div class="card">
-          <h2 class="card-title">Configurações</h2>
+          <h2 class="card-title">⚙️ Configurações</h2>
           <div class="config-group">
             <label for="cfgMinTime">Tempo Mínimo (min)</label>
             <input type="number" id="cfgMinTime" value="40" min="1" max="300">
@@ -160,7 +170,7 @@
             <label for="cfgSessionName">Nome da Sessão</label>
             <input type="text" id="cfgSessionName" value="Noite dos MLKs" maxlength="50">
           </div>
-          <button class="btn btn-primary admin-only" id="btnSaveConfig">Salvar Configurações</button>
+          <button class="btn btn-primary admin-only" id="btnSaveConfig">💾 Salvar Configurações</button>
         </div>
         <div class="card">
           <h2 class="card-title">Código da Sala</h2>
@@ -172,7 +182,7 @@
       <!-- TAB: HISTORICO -->
       <section class="tab-panel" id="tab-historico" role="tabpanel">
         <div class="card">
-          <h2 class="card-title">Histórico de Rodadas</h2>
+          <h2 class="card-title">📋 Histórico de Rodadas</h2>
           <div class="log-list" id="logList">
             <p class="text-muted">Nenhuma rodada ainda.</p>
           </div>
@@ -182,16 +192,16 @@
       <!-- TAB: SHARE -->
       <section class="tab-panel" id="tab-share" role="tabpanel">
         <div class="card">
-          <h2 class="card-title">Compartilhar Sessão</h2>
+          <h2 class="card-title">🔗 Compartilhar Sessão</h2>
           <p class="text-muted mb">Envie o link para os participantes entrarem na mesma sala em tempo real.</p>
           <div class="share-actions">
-            <button class="btn btn-primary" id="btnCopyLink">Copiar Link</button>
-            <button class="btn btn-ghost" id="btnExportText">Exportar Texto</button>
+            <button class="btn btn-primary" id="btnCopyLink">📋 Copiar Link</button>
+            <button class="btn btn-ghost" id="btnExportText">📄 Exportar Texto</button>
           </div>
           <div class="share-box hidden" id="shareBox"></div>
         </div>
         <div class="card">
-          <h2 class="card-title">Jogadores Online</h2>
+          <h2 class="card-title">👥 Jogadores Online</h2>
           <div id="onlineList" class="online-list"></div>
         </div>
       </section>
