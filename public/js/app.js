@@ -4,7 +4,8 @@
 
   var socket = io({ reconnection: true, reconnectionDelay: 1000, reconnectionAttempts: Infinity });
 
-  // ── DOM refs ──
+  // ── DOM ref 
+  // s ──
   var $ = function (id) { return document.getElementById(id); };
   var joinScreen       = $('joinScreen');
   var appScreen        = $('appScreen');
@@ -18,7 +19,6 @@
   var ctx              = canvas.getContext('2d');
   var rouletteCenter   = $('rouletteCenter');
   var btnSpin          = $('btnSpin');
-  var btnRespin        = $('btnRespin');
   var resultArea       = $('resultArea');
   var currentGameBar   = $('currentGameBar');
   var cgEmoji          = $('cgEmoji');
@@ -417,14 +417,15 @@
   function drawRoulette(games) {
     ctx.clearRect(0, 0, 640, 640);
     var n = games.length;
+    var cx = 320, cy = 320, R = 310;
 
     if (n === 0) {
       ctx.fillStyle = '#1e293b';
-      ctx.beginPath(); ctx.arc(320, 320, 310, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = '#94a3b8';
-      ctx.font = '24px Inter, sans-serif';
+      ctx.font = '22px Inter, sans-serif';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText('Adicione jogos', 320, 320);
+      ctx.fillText('🎮 Adicione jogos', cx, cy);
       return;
     }
 
@@ -433,45 +434,101 @@
     for (var i = 0; i < n; i++) {
       var startAngle = i * sliceAngle + currentRotation;
       var endAngle = startAngle + sliceAngle;
+      var midAngle = startAngle + sliceAngle / 2;
+
+      // Gradient fill per slice
+      var gx = cx + Math.cos(midAngle) * R * 0.5;
+      var gy = cy + Math.sin(midAngle) * R * 0.5;
+      var grad = ctx.createRadialGradient(cx, cy, 30, gx, gy, R);
+      var baseColor = COLORS[i % COLORS.length];
+      grad.addColorStop(0, lightenColor(baseColor, 25));
+      grad.addColorStop(1, baseColor);
 
       ctx.beginPath();
-      ctx.moveTo(320, 320);
-      ctx.arc(320, 320, 310, startAngle, endAngle);
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, R, startAngle, endAngle);
       ctx.closePath();
-      ctx.fillStyle = COLORS[i % COLORS.length];
+      ctx.fillStyle = grad;
       ctx.fill();
-      ctx.strokeStyle = 'rgba(0,0,0,.3)';
-      ctx.lineWidth = 2;
+
+      // Slice border
+      ctx.strokeStyle = 'rgba(0,0,0,.25)';
+      ctx.lineWidth = 1.5;
       ctx.stroke();
 
+      // Text with emoji + name
       ctx.save();
-      ctx.translate(320, 320);
-      ctx.rotate(startAngle + sliceAngle / 2);
+      ctx.translate(cx, cy);
+      ctx.rotate(midAngle);
       ctx.fillStyle = '#fff';
-      ctx.font = 'bold ' + Math.min(22, 200 / n) + 'px Inter, sans-serif';
+      ctx.shadowColor = 'rgba(0,0,0,.5)';
+      ctx.shadowBlur = 4;
+      var fontSize = Math.min(20, Math.max(11, 180 / n));
+      ctx.font = 'bold ' + fontSize + 'px Inter, sans-serif';
       ctx.textAlign = 'right';
       ctx.textBaseline = 'middle';
-      var lbl = games[i].name.length > 16 ? games[i].name.slice(0, 15) + '...' : games[i].name;
-      ctx.fillText(lbl, 280, 0);
+      var emoji = games[i].emoji || '';
+      var lbl = games[i].name.length > 14 ? games[i].name.slice(0, 13) + '..' : games[i].name;
+      var textR = R - 20;
+      // Emoji closer to edge
+      ctx.font = fontSize + 'px Inter, sans-serif';
+      ctx.fillText(emoji, textR, 0);
+      // Name slightly inward
+      ctx.font = 'bold ' + fontSize + 'px Inter, sans-serif';
+      ctx.fillText(lbl, textR - fontSize - 4, 0);
+      ctx.shadowBlur = 0;
       ctx.restore();
     }
 
+    // Outer ring glow
     ctx.beginPath();
-    ctx.arc(320, 320, 310, 0, Math.PI * 2);
-    ctx.strokeStyle = 'rgba(124,58,237,.5)';
-    ctx.lineWidth = 6;
+    ctx.arc(cx, cy, R, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(168, 85, 247, .6)';
+    ctx.lineWidth = 4;
     ctx.stroke();
+
+    // Inner decorative ring
+    ctx.beginPath();
+    ctx.arc(cx, cy, R - 6, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(255,255,255,.08)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Tick marks at slice boundaries
+    for (var j = 0; j < n; j++) {
+      var a = j * sliceAngle + currentRotation;
+      ctx.beginPath();
+      ctx.moveTo(cx + Math.cos(a) * (R - 12), cy + Math.sin(a) * (R - 12));
+      ctx.lineTo(cx + Math.cos(a) * R, cy + Math.sin(a) * R);
+      ctx.strokeStyle = 'rgba(255,255,255,.3)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+  }
+
+  // Helper: lighten a hex color
+  function lightenColor(hex, pct) {
+    var num = parseInt(hex.replace('#', ''), 16);
+    var r = Math.min(255, (num >> 16) + pct);
+    var g = Math.min(255, ((num >> 8) & 0xff) + pct);
+    var b = Math.min(255, (num & 0xff) + pct);
+    return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
   }
 
   // ═══════════════════════════════════════════════════════
   //  SPIN — 10s dramatic animation
   // ═══════════════════════════════════════════════════════
-  btnSpin.addEventListener('click', function () {
+  function doSpin() {
     if (spinning) return;
     socket.emit('spin');
-  });
-  btnRespin.addEventListener('click', function () {
-    if (spinning) return;
+  }
+
+  btnSpin.addEventListener('click', doSpin);
+
+  // Click on canvas or center to spin
+  canvas.addEventListener('click', doSpin);
+  rouletteCenter.style.cursor = 'pointer';
+  rouletteCenter.addEventListener('click', doSpin);
     socket.emit('spin');
   });
 
@@ -479,7 +536,7 @@
     if (spinning) return;
     spinning = true;
     btnSpin.disabled = true;
-    hide(btnRespin); hide(resultArea); hide(timerCard);
+    hide(resultArea); hide(timerCard);
 
     startSpinSound();
 
@@ -533,7 +590,6 @@
     spinning = false;
     stopSpinSound();
     btnSpin.disabled = false;
-    show(btnRespin);
 
     var w = data.winner;
     show(resultArea);
