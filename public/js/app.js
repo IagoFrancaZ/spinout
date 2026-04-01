@@ -4,8 +4,7 @@
 
   var socket = io({ reconnection: true, reconnectionDelay: 1000, reconnectionAttempts: Infinity });
 
-  // ── DOM ref 
-  // s ──
+  // ── DOM refs ──
   var $ = function (id) { return document.getElementById(id); };
   var joinScreen       = $('joinScreen');
   var appScreen        = $('appScreen');
@@ -529,8 +528,6 @@
   canvas.addEventListener('click', doSpin);
   rouletteCenter.style.cursor = 'pointer';
   rouletteCenter.addEventListener('click', doSpin);
-    socket.emit('spin');
-  });
 
   socket.on('spin:start', function (data) {
     if (spinning) return;
