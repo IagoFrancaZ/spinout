@@ -8,6 +8,10 @@ primary_region = 'gru'
 
 [build]
 
+[mounts]
+  source = "spinout_data"
+  destination = "/app/data"
+
 [http_service]
   internal_port = 3000
   force_https = true

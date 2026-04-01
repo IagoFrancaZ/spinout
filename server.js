@@ -389,6 +389,15 @@ io.on('connection', (socket) => {
   });
 
   // ── Config ──
+  socket.on('log:clear', () => {
+    if (!currentRoom) return;
+    if (!isRoomAdmin(currentRoom, socket.id)) return;
+    currentRoom.log = [];
+    currentRoom.round = 1;
+    saveRoomToDisk(currentRoom);
+    broadcastState(currentRoom);
+  });
+
   socket.on('config:update', (cfg) => {
     if (!currentRoom) return;
     if (!isRoomAdmin(currentRoom, socket.id)) return;

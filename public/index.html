@@ -59,6 +59,8 @@
       <!-- TAB: SORTEIO -->
       <section class="tab-panel active" id="tab-sorteio" role="tabpanel">
 
+        <div class="online-bar" id="onlineBar"></div>
+
         <div class="current-game-bar hidden" id="currentGameBar">
           <div class="cg-info">
             <span class="cg-emoji" id="cgEmoji"></span>
@@ -185,6 +187,9 @@
           <h2 class="card-title">📋 Histórico de Rodadas</h2>
           <div class="log-list" id="logList">
             <p class="text-muted">Nenhuma rodada ainda.</p>
+          </div>
+          <div class="card-actions">
+            <button class="btn btn-danger btn-sm admin-only" id="btnClearLog">🗑️ Limpar Histórico</button>
           </div>
         </div>
       </section>

@@ -53,7 +53,9 @@
   var btnExportText    = $('btnExportText');
   var shareBox         = $('shareBox');
   var onlineList       = $('onlineList');
+  var onlineBar        = $('onlineBar');
   var logList          = $('logList');
+  var btnClearLog      = $('btnClearLog');
   var adminBadge       = $('adminBadge');
   var confettiCanvas   = $('confettiCanvas');
   var confettiCtx      = confettiCanvas.getContext('2d');
@@ -695,6 +697,10 @@
     if (confirm('Remover todos os jogos?')) socket.emit('game:clearAll');
   });
 
+  btnClearLog.addEventListener('click', function () {
+    if (confirm('Limpar todo o histórico de sorteios?')) socket.emit('log:clear');
+  });
+
   function renderGameList(games) {
     if (!games || games.length === 0) {
       gameList.innerHTML = '<p class="text-muted">🎮 Nenhum jogo cadastrado.</p>';
@@ -771,11 +777,16 @@
   function renderOnline(users) {
     if (!users || users.length === 0) {
       onlineList.innerHTML = '<p class="text-muted">👤 Ninguem online.</p>';
+      onlineBar.innerHTML = '';
       return;
     }
     onlineList.innerHTML = users.map(function (u) {
       var badge = u.isAdmin ? '<span class="host-tag">👑 HOST</span>' : '';
       return '<span class="online-user"><span class="online-dot"></span>' + esc(u.name) + badge + '</span>';
+    }).join('');
+    onlineBar.innerHTML = '<span class="online-bar-label">👥 Na sala:</span> ' + users.map(function (u) {
+      var crown = u.isAdmin ? '👑 ' : '';
+      return '<span class="online-bar-user"><span class="online-dot"></span>' + crown + esc(u.name) + '</span>';
     }).join('');
   }
 
