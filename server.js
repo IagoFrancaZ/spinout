@@ -88,7 +88,10 @@ function createRoom(code, saved) {
       nextVoteAt: 0,
     },
     votes: new Map(),
-    voteOpen: false,
+    votePhase: 'none',
+    voteCountdown: 0,
+    voteIntervalId: null,
+    voteResult: null,
     users: new Map(),
     adminId: null,
   };
@@ -152,7 +155,9 @@ function broadcastState(room) {
           phase: room.timer.phase,
         },
         votes: tally,
-        voteOpen: room.voteOpen,
+        votePhase: room.votePhase,
+        voteCountdown: room.voteCountdown,
+        voteResult: room.voteResult,
         users: userList,
         userCount: room.users.size,
         isAdmin: sid === room.adminId,
@@ -167,46 +172,126 @@ function emitTimerTick(room) {
     seconds: room.timer.seconds,
     phase: room.timer.phase,
     votes: tally,
-    voteOpen: room.voteOpen,
+    votePhase: room.votePhase,
+    voteCountdown: room.voteCountdown,
   });
+}
+
+const VOTE_DURATION = 30;
+const VOTE_TALLY_DURATION = 5;
+
+function clearVoteTimer(room) {
+  if (room.voteIntervalId) {
+    clearInterval(room.voteIntervalId);
+    room.voteIntervalId = null;
+  }
+}
+
+function resetVoteState(room) {
+  clearVoteTimer(room);
+  room.votes.clear();
+  room.votePhase = 'none';
+  room.voteCountdown = 0;
+  room.voteResult = null;
+}
+
+function openVote(room) {
+  clearVoteTimer(room);
+  room.votes.clear();
+  room.votePhase = 'voting';
+  room.voteCountdown = VOTE_DURATION;
+  room.voteResult = null;
+
+  io.to(room.code).emit('vote:open', { countdown: VOTE_DURATION });
+  io.to(room.code).emit('timer:alert', 'voteStarted');
+  broadcastState(room);
+
+  room.voteIntervalId = setInterval(() => {
+    room.voteCountdown--;
+    io.to(room.code).emit('vote:countdown', { remaining: room.voteCountdown });
+    if (room.voteCountdown <= 0) {
+      clearVoteTimer(room);
+      closeVote(room);
+    }
+  }, 1000);
+}
+
+function closeVote(room) {
+  room.votePhase = 'tallying';
+  room.voteCountdown = 0;
+  io.to(room.code).emit('vote:tallying');
+  broadcastState(room);
+
+  setTimeout(() => {
+    const tally = getVoteTally(room);
+
+    if (tally.total === 0 || tally.continue === tally.switch) {
+      room.votePhase = 'result';
+      room.voteResult = 'tie';
+      io.to(room.code).emit('vote:result', { result: 'tie', tally });
+      broadcastState(room);
+      setTimeout(() => {
+        if (room.timer.running || room.timer.phase === 'ended') {
+          openVote(room);
+        }
+      }, 3000);
+    } else if (tally.switch > tally.continue) {
+      room.votePhase = 'result';
+      room.voteResult = 'switch';
+      io.to(room.code).emit('vote:result', { result: 'switch', tally });
+      broadcastState(room);
+    } else {
+      room.votePhase = 'result';
+      room.voteResult = 'continue';
+      io.to(room.code).emit('vote:result', { result: 'continue', tally });
+      room.timer.nextVoteAt = room.timer.seconds + room.config.voteInterval * 60;
+      broadcastState(room);
+      setTimeout(() => {
+        if (room.votePhase === 'result' && room.voteResult === 'continue') {
+          room.votePhase = 'none';
+          room.voteResult = null;
+          broadcastState(room);
+        }
+      }, 5000);
+    }
+  }, VOTE_TALLY_DURATION * 1000);
 }
 
 function startRoomTimer(room) {
   if (room.timer.running) return;
   room.timer.running = true;
   room.timer.phase = 'min';
-  room.timer.nextVoteAt = room.config.minTime * 60;
+  if (!room.timer.nextVoteAt) {
+    room.timer.nextVoteAt = room.config.minTime * 60;
+  }
 
   room.timer.intervalId = setInterval(() => {
     room.timer.seconds++;
     const minSec = room.config.minTime * 60;
     const maxSec = room.config.maxTime * 60;
 
-    // Phase transitions
     if (room.timer.phase === 'min' && room.timer.seconds >= minSec) {
       room.timer.phase = 'overtime';
-      room.timer.nextVoteAt = minSec;
-      room.voteOpen = true;
-      room.votes.clear();
+      room.timer.nextVoteAt = room.timer.seconds;
       io.to(room.code).emit('timer:alert', 'minComplete');
+      openVote(room);
     }
 
-    if (room.timer.phase === 'overtime') {
-      const interval = room.config.voteInterval * 60;
-      if (room.timer.seconds >= room.timer.nextVoteAt + interval) {
-        room.timer.nextVoteAt = room.timer.seconds;
-        room.votes.clear();
-        room.voteOpen = true;
-        io.to(room.code).emit('timer:alert', 'newVoteRound');
+    if (room.timer.phase === 'overtime' && room.votePhase === 'none') {
+      if (room.timer.seconds >= room.timer.nextVoteAt) {
+        openVote(room);
       }
     }
 
-    if (room.timer.seconds >= maxSec) {
+    if (room.timer.seconds >= maxSec && room.timer.phase !== 'ended') {
       room.timer.phase = 'ended';
       room.timer.running = false;
       clearInterval(room.timer.intervalId);
       room.timer.intervalId = null;
       io.to(room.code).emit('timer:alert', 'maxReached');
+      if (room.votePhase === 'none') {
+        openVote(room);
+      }
     }
 
     emitTimerTick(room);
@@ -226,8 +311,8 @@ function resetRoomTimer(room) {
   pauseRoomTimer(room);
   room.timer.seconds = 0;
   room.timer.phase = 'idle';
-  room.voteOpen = false;
-  room.votes.clear();
+  room.timer.nextVoteAt = 0;
+  resetVoteState(room);
   emitTimerTick(room);
 }
 
@@ -335,7 +420,7 @@ io.on('connection', (socket) => {
 
   // ── Vote ──
   socket.on('vote', ({ choice }) => {
-    if (!currentRoom || !currentRoom.voteOpen) return;
+    if (!currentRoom || currentRoom.votePhase !== 'voting') return;
     if (choice !== 'continue' && choice !== 'switch') return;
     currentRoom.votes.set(socket.id, choice);
     const tally = getVoteTally(currentRoom);

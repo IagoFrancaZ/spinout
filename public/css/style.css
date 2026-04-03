@@ -617,6 +617,126 @@ select:focus {
   min-height: 1.3em;
 }
 
+/* ═══ VOTE COUNTDOWN ═══ */
+.vote-countdown {
+  position: relative;
+  height: 28px;
+  background: rgba(255, 255, 255, .06);
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+
+.vote-countdown-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  border-radius: 14px;
+  transition: width 1s linear;
+}
+
+.vote-countdown-text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .8rem;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0,0,0,.5);
+}
+
+.vote-countdown-urgent .vote-countdown-fill {
+  background: linear-gradient(90deg, var(--red), #f87171);
+  animation: urgentPulse .5s ease-in-out infinite;
+}
+
+@keyframes urgentPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .6; }
+}
+
+/* ═══ VOTE TALLY ANIMATION ═══ */
+.vote-tally {
+  text-align: center;
+  padding: 24px;
+}
+
+.vote-tally p {
+  font-size: 1.1rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.vote-tally-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid var(--border);
+  border-top-color: var(--accent2);
+  border-radius: 50%;
+  margin: 0 auto 14px;
+  animation: tallySpinner .8s linear infinite;
+}
+
+@keyframes tallySpinner {
+  to { transform: rotate(360deg); }
+}
+
+/* ═══ VOTE RESULT REVEAL ═══ */
+.vote-reveal {
+  animation: voteRevealPop .5s ease-out;
+}
+
+@keyframes voteRevealPop {
+  0% { transform: scale(.8); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.vote-result-card {
+  text-align: center;
+  padding: 20px;
+  border-radius: var(--radius);
+  border: 2px solid;
+}
+
+.vote-result-card.continue {
+  background: rgba(34, 197, 94, .1);
+  border-color: var(--green);
+}
+
+.vote-result-card.switch {
+  background: rgba(239, 68, 68, .1);
+  border-color: var(--red);
+}
+
+.vote-result-card.tie {
+  background: rgba(234, 179, 8, .1);
+  border-color: var(--yellow);
+}
+
+.vote-result-icon {
+  font-size: 3rem;
+  margin-bottom: 8px;
+}
+
+.vote-result-text {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.vote-result-sub {
+  color: var(--muted);
+  font-size: .85rem;
+  margin-top: 6px;
+}
+
+.vote-selected {
+  transform: scale(1.05);
+  box-shadow: 0 0 16px var(--glow);
+}
+
 /* ═══ LOG ═══ */
 .log-list { max-height: 300px; overflow-y: auto; }
 

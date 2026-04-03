@@ -106,22 +106,30 @@
 
           <!-- VOTE -->
           <div class="vote-section hidden" id="voteSection">
-            <h3 class="vote-title">Votação — Continuar ou Trocar?</h3>
-            <div class="vote-bar-container">
+            <h3 class="vote-title" id="voteTitle">🗳️ Votação — Continuar ou Trocar?</h3>
+            <div class="vote-countdown" id="voteCountdownBar">
+              <div class="vote-countdown-fill" id="voteCountdownFill"></div>
+              <span class="vote-countdown-text" id="voteCountdownText">30s</span>
+            </div>
+            <div class="vote-bar-container" id="voteBarContainer">
               <div class="vote-bar-bg">
                 <div class="vote-bar-continue" id="voteContinueBar">Continuar</div>
                 <div class="vote-bar-switch" id="voteSwitchBar">Trocar</div>
               </div>
               <div class="vote-counts">
-                <span>Continuar: <strong id="voteContinueCount">0</strong></span>
-                <span>Trocar: <strong id="voteSwitchCount">0</strong></span>
+                <span>✅ Continuar: <strong id="voteContinueCount">0</strong></span>
+                <span>🔄 Trocar: <strong id="voteSwitchCount">0</strong></span>
               </div>
             </div>
-            <div class="vote-actions">
-              <button class="btn btn-success" id="btnVoteContinue">Continuar</button>
-              <button class="btn btn-danger" id="btnVoteSwitch">Trocar</button>
+            <div class="vote-actions" id="voteActions">
+              <button class="btn btn-success" id="btnVoteContinue">✅ Continuar</button>
+              <button class="btn btn-danger" id="btnVoteSwitch">🔄 Trocar</button>
             </div>
-            <p class="vote-result" id="voteResult"></p>
+            <div class="vote-tally hidden" id="voteTally">
+              <div class="vote-tally-spinner"></div>
+              <p>Contando votos...</p>
+            </div>
+            <div class="vote-reveal hidden" id="voteReveal"></div>
           </div>
         </div>
       </section>

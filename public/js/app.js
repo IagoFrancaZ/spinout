@@ -31,13 +31,20 @@
   var btnTimerPause    = $('btnTimerPause');
   var btnTimerReset    = $('btnTimerReset');
   var voteSection      = $('voteSection');
+  var voteTitle        = $('voteTitle');
+  var voteCountdownBar = $('voteCountdownBar');
+  var voteCountdownFill= $('voteCountdownFill');
+  var voteCountdownText= $('voteCountdownText');
+  var voteBarContainer = $('voteBarContainer');
   var voteContinueBar  = $('voteContinueBar');
   var voteSwitchBar    = $('voteSwitchBar');
   var voteContinueCount= $('voteContinueCount');
   var voteSwitchCount  = $('voteSwitchCount');
   var btnVoteContinue  = $('btnVoteContinue');
   var btnVoteSwitch    = $('btnVoteSwitch');
-  var voteResult       = $('voteResult');
+  var voteActions      = $('voteActions');
+  var voteTally        = $('voteTally');
+  var voteReveal       = $('voteReveal');
   var addGameForm      = $('addGameForm');
   var gameList         = $('gameList');
   var gameCount        = $('gameCount');
@@ -392,7 +399,7 @@
     renderConfig(s.config);
     renderLog(s.log);
     renderOnline(s.users);
-    renderVotes(s.votes, s.voteOpen);
+    renderVoteState(s);
     userCountEl.textContent = s.userCount + ' online';
     gameCount.textContent = s.games.length;
 
@@ -634,8 +641,6 @@
       timerLabel.textContent = 'TEMPO MAXIMO ATINGIDO';
       timerDisplay.className = 'timer-display ended';
     }
-
-    renderVotes(data.votes, data.voteOpen);
   });
 
   socket.on('timer:alert', function (type) {
@@ -649,13 +654,106 @@
   // ═══════════════════════════════════════════════════════
   //  VOTES
   // ═══════════════════════════════════════════════════════
-  btnVoteContinue.addEventListener('click', function () { socket.emit('vote', { choice: 'continue' }); });
-  btnVoteSwitch.addEventListener('click', function () { socket.emit('vote', { choice: 'switch' }); });
+  var voteTotalDuration = 30;
+  var hasVoted = false;
 
-  socket.on('vote:update', function (tally) { renderVotes(tally, true); });
+  btnVoteContinue.addEventListener('click', function () {
+    if (hasVoted) return;
+    hasVoted = true;
+    socket.emit('vote', { choice: 'continue' });
+    btnVoteContinue.classList.add('vote-selected');
+    btnVoteSwitch.disabled = true;
+  });
 
-  function renderVotes(tally, open) {
-    if (open) { show(voteSection); } else { hide(voteSection); return; }
+  btnVoteSwitch.addEventListener('click', function () {
+    if (hasVoted) return;
+    hasVoted = true;
+    socket.emit('vote', { choice: 'switch' });
+    btnVoteSwitch.classList.add('vote-selected');
+    btnVoteContinue.disabled = true;
+  });
+
+  socket.on('vote:open', function (data) {
+    hasVoted = false;
+    voteTotalDuration = data.countdown;
+    show(voteSection);
+    show(voteCountdownBar);
+    show(voteBarContainer);
+    show(voteActions);
+    hide(voteTally);
+    hide(voteReveal);
+    voteTitle.textContent = '\uD83D\uDDF3\uFE0F Votação — Continuar ou Trocar?';
+    btnVoteContinue.disabled = false;
+    btnVoteSwitch.disabled = false;
+    btnVoteContinue.classList.remove('vote-selected');
+    btnVoteSwitch.classList.remove('vote-selected');
+    voteCountdownFill.style.width = '100%';
+    voteCountdownText.textContent = data.countdown + 's';
+    voteContinueCount.textContent = '0';
+    voteSwitchCount.textContent = '0';
+    voteContinueBar.style.width = '50%';
+    voteSwitchBar.style.width = '50%';
+    playTimerAlert();
+  });
+
+  socket.on('vote:countdown', function (data) {
+    var pct = voteTotalDuration > 0 ? (data.remaining / voteTotalDuration) * 100 : 0;
+    voteCountdownFill.style.width = pct + '%';
+    voteCountdownText.textContent = data.remaining + 's';
+    if (data.remaining <= 5) {
+      voteCountdownBar.classList.add('vote-countdown-urgent');
+    } else {
+      voteCountdownBar.classList.remove('vote-countdown-urgent');
+    }
+  });
+
+  socket.on('vote:update', function (tally) {
+    updateVoteBars(tally);
+  });
+
+  socket.on('vote:tallying', function () {
+    hide(voteActions);
+    hide(voteCountdownBar);
+    show(voteTally);
+    voteTitle.textContent = '\uD83D\uDDF3\uFE0F Contando votos...';
+  });
+
+  socket.on('vote:result', function (data) {
+    hide(voteTally);
+    hide(voteActions);
+    hide(voteCountdownBar);
+    show(voteReveal);
+
+    if (data.result === 'tie') {
+      voteTitle.textContent = '\u2696\uFE0F Empate!';
+      voteReveal.innerHTML =
+        '<div class="vote-result-card tie">' +
+          '<div class="vote-result-icon">\u2696\uFE0F</div>' +
+          '<div class="vote-result-text">Empate! Nova votação em breve...</div>' +
+        '</div>';
+    } else if (data.result === 'switch') {
+      voteTitle.textContent = '\uD83D\uDD04 Trocar de jogo!';
+      voteReveal.innerHTML =
+        '<div class="vote-result-card switch">' +
+          '<div class="vote-result-icon">\uD83D\uDD04</div>' +
+          '<div class="vote-result-text">Maioria votou para TROCAR!</div>' +
+          '<div class="vote-result-sub">Faça um novo sorteio na roleta</div>' +
+        '</div>';
+      playMaxAlarm();
+    } else {
+      voteTitle.textContent = '\u2705 Continuar!';
+      voteReveal.innerHTML =
+        '<div class="vote-result-card continue">' +
+          '<div class="vote-result-icon">\u2705</div>' +
+          '<div class="vote-result-text">Maioria votou para CONTINUAR!</div>' +
+        '</div>';
+      playWin();
+    }
+
+    updateVoteBars(data.tally);
+  });
+
+  function updateVoteBars(tally) {
     var total = tally.continue + tally.switch;
     var contPct = total > 0 ? (tally.continue / total * 100) : 50;
     var swPct = total > 0 ? (tally.switch / total * 100) : 50;
@@ -663,19 +761,30 @@
     voteSwitchBar.style.width = swPct + '%';
     voteContinueCount.textContent = tally.continue;
     voteSwitchCount.textContent = tally.switch;
+  }
 
-    if (total > 0) {
-      if (tally.switch > tally.continue) {
-        voteResult.textContent = 'Maioria quer trocar! Faca um novo sorteio.';
-        voteResult.style.color = 'var(--red)';
-      } else if (tally.continue > tally.switch) {
-        voteResult.textContent = 'Maioria quer continuar!';
-        voteResult.style.color = 'var(--green)';
-      } else {
-        voteResult.textContent = 'Empate!';
-        voteResult.style.color = 'var(--yellow)';
-      }
-    } else { voteResult.textContent = ''; }
+  function renderVoteState(s) {
+    if (s.votePhase === 'none') {
+      hide(voteSection);
+      return;
+    }
+    show(voteSection);
+    updateVoteBars(s.votes);
+    if (s.votePhase === 'voting') {
+      voteTitle.textContent = '\uD83D\uDDF3\uFE0F Votação — Continuar ou Trocar?';
+      show(voteCountdownBar); show(voteBarContainer); show(voteActions);
+      hide(voteTally); hide(voteReveal);
+      var pct = voteTotalDuration > 0 ? (s.voteCountdown / voteTotalDuration) * 100 : 0;
+      voteCountdownFill.style.width = pct + '%';
+      voteCountdownText.textContent = s.voteCountdown + 's';
+    } else if (s.votePhase === 'tallying') {
+      voteTitle.textContent = '\uD83D\uDDF3\uFE0F Contando votos...';
+      hide(voteCountdownBar); hide(voteActions); hide(voteReveal);
+      show(voteTally);
+    } else if (s.votePhase === 'result') {
+      hide(voteCountdownBar); hide(voteActions); hide(voteTally);
+      show(voteReveal);
+    }
   }
 
   // ═══════════════════════════════════════════════════════
