@@ -94,6 +94,8 @@ function createRoom(code, saved) {
     voteResult: null,
     users: new Map(),
     adminId: null,
+    adminName: null,
+    adminGraceTimer: null,
   };
 }
 
@@ -105,8 +107,10 @@ function transferAdmin(room) {
   if (room.users.size > 0) {
     const firstId = room.users.keys().next().value;
     room.adminId = firstId;
+    room.adminName = room.users.get(firstId).name;
   } else {
     room.adminId = null;
+    room.adminName = null;
   }
 }
 
@@ -338,9 +342,15 @@ io.on('connection', (socket) => {
     socket.join(room.code);
     currentRoom = room;
 
-    // First user becomes admin
-    if (!room.adminId || !room.users.has(room.adminId)) {
+    // Restore admin if reconnecting within grace period
+    if (room.adminGraceTimer && room.adminName === sanitizedName) {
+      clearTimeout(room.adminGraceTimer);
+      room.adminGraceTimer = null;
       room.adminId = socket.id;
+      room.adminName = sanitizedName;
+    } else if (!room.adminId || !room.users.has(room.adminId)) {
+      room.adminId = socket.id;
+      room.adminName = sanitizedName;
     }
 
     socket.emit('joined', { code: room.code, name: sanitizedName, isAdmin: socket.id === room.adminId });
@@ -507,9 +517,21 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     if (currentRoom) {
       const wasAdmin = currentRoom.adminId === socket.id;
+      const adminName = wasAdmin ? currentRoom.adminName : null;
       currentRoom.users.delete(socket.id);
       currentRoom.votes.delete(socket.id);
-      if (wasAdmin) transferAdmin(currentRoom);
+
+      if (wasAdmin) {
+        // Grace period: wait 15s before transferring admin
+        currentRoom.adminGraceTimer = setTimeout(() => {
+          currentRoom.adminGraceTimer = null;
+          if (currentRoom.adminId === socket.id) {
+            transferAdmin(currentRoom);
+            broadcastState(currentRoom);
+          }
+        }, 15000);
+      }
+
       broadcastState(currentRoom);
 
       // Cleanup empty rooms after 5 min

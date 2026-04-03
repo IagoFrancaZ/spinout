@@ -405,6 +405,9 @@
 
     if (s.currentGame) show(timerCard);
 
+    // Render timer display from state (not just from ticks)
+    renderTimerFromState(s);
+
     if (s.timer.running) {
       hide(btnTimerStart); show(btnTimerPause); show(btnTimerReset);
     } else if (s.timer.phase !== 'idle') {
@@ -625,6 +628,11 @@
     var sec = data.seconds;
     var phase = data.phase;
     if (!currentState) return;
+    updateTimerDisplay(sec, phase);
+  });
+
+  function updateTimerDisplay(sec, phase) {
+    if (!currentState) return;
     var minSec = currentState.config.minTime * 60;
 
     if (phase === 'min' || phase === 'idle') {
@@ -641,7 +649,11 @@
       timerLabel.textContent = 'TEMPO MAXIMO ATINGIDO';
       timerDisplay.className = 'timer-display ended';
     }
-  });
+  }
+
+  function renderTimerFromState(s) {
+    updateTimerDisplay(s.timer.seconds, s.timer.phase);
+  }
 
   socket.on('timer:alert', function (type) {
     if (type === 'maxReached') {
